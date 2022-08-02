@@ -7,12 +7,10 @@ type Props = {
 export const Layout = (props: Props) => (
   <>
     <Head>
-      <title>Authsignal Passwordless Example</title>
+      <title>Authsignal Supabase Example</title>
       <link rel="icon" href="/favicon.ico" />
     </Head>
 
-    <div className="flex grow flex-col justify-center items-center">
-      <div className="min-w-[400px]">{props.children}</div>
-    </div>
+    {props.children}
   </>
 );
