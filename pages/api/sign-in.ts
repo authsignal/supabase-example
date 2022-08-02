@@ -35,5 +35,6 @@ export default async function signIn(
   }
 }
 
-const redirectUrl =
-  process.env.REDIRECT_URL ?? "http://localhost:3000/api/callback";
+const redirectUrl = process.env.SITE_URL
+  ? `${process.env.SITE_URL}/api/callback`
+  : "http://localhost:3000/api/callback";

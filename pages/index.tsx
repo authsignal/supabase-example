@@ -60,4 +60,4 @@ export default function HomePage({ user, isEnrolled, mfaUrl }: Props) {
   );
 }
 
-const redirectUrl = process.env.redirectUrl ?? "http://localhost:3000";
+const redirectUrl = process.env.SITE_URL ?? "http://localhost:3000";
