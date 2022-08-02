@@ -1,9 +1,10 @@
 import { User } from "@supabase/supabase-js";
 import { getUser, withPageAuth } from "@supabase/auth-helpers-nextjs";
-import Link from "next/link";
 import { Layout } from "../components";
 import { GetServerSideProps } from "next";
 import { authsignal } from "../lib";
+import { Button, Typography } from "@supabase/ui";
+import { useRouter } from "next/router";
 
 interface Props {
   user: User;
@@ -28,36 +29,38 @@ export const getServerSideProps: GetServerSideProps<Props> = withPageAuth({
 });
 
 export default function HomePage({ user, isEnrolled, mfaUrl }: Props) {
+  const router = useRouter();
+
   return (
     <Layout>
-      <header className="flex justify-between items-center bg-black w-full">
-        <div className="text-lg m-3 text-white">My Example App</div>
-        <Link href={"/api/sign-out"}>
-          <button className="cursor-pointer text-sm font-medium bg-none border-none text-white p-3">
-            Log out
-          </button>
-        </Link>
-      </header>
-      <div className="flex justify-center items-center flex-col grow">
-        <div>
-          <div className="text-sm mb-1">Logged in as:</div>
-          <div>{user?.email}</div>
-          <div className="text-sm my-1">
-            Is user enrolled: {isEnrolled.toString()}
-          </div>
-          {!isEnrolled && (
-            <button
-              type="submit"
-              className="cursor-pointer text-sm font-medium bg-slate-800 text-white border-none rounded-md mt-1 px-3 h-10"
-              onClick={() => (window.location.href = mfaUrl)}
-            >
-              Set up MFA
-            </button>
-          )}
-        </div>
+      <div className="flex flex-col min-w-[300px]">
+        <Typography.Text className="mt-2">
+          Logged in as: {user?.email}
+        </Typography.Text>
+        <Typography.Text className="mt-2">
+          Enrollment status: {isEnrolled ? "Enrolled" : "Not enrolled"}
+        </Typography.Text>
+        {!isEnrolled && (
+          <Button
+            block
+            className="mt-3"
+            onClick={() => (window.location.href = mfaUrl)}
+          >
+            Set up MFA
+          </Button>
+        )}
+        <Button
+          block
+          className="mt-3"
+          onClick={() => router.push("/api/sign-out")}
+        >
+          Sign out
+        </Button>
       </div>
     </Layout>
   );
 }
 
-const redirectUrl = process.env.SITE_URL ?? "http://localhost:3000";
+const redirectUrl = process.env.SITE_URL
+  ? `${process.env.SITE_URL}/api/callback`
+  : "http://localhost:3000/api/callback";

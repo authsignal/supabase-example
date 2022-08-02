@@ -14,7 +14,7 @@ export default async function signIn(
   );
 
   if (error || !data?.user) {
-    return { error };
+    return res.send({ error });
   }
 
   const { state, challengeUrl } = await authsignal.track({
@@ -24,7 +24,7 @@ export default async function signIn(
   });
 
   // If mfa challenge is required, set temporary encrypted cookie with session data
-  // And then redirect to the Authsignal Prebuilt MFA page
+  // And then redirect to the Authsignal Prebuilt MFA page to initiate the challenge
   // Otherwise if no challenge is required, set auth cookie immediately and redirect to home
   if (state === UserActionState.CHALLENGE_REQUIRED && challengeUrl) {
     await setTempCookie(data, res);

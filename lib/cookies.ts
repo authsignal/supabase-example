@@ -4,12 +4,12 @@ import { parse, serialize } from "cookie";
 import { NextApiRequest, NextApiResponse } from "next";
 
 // Sets a temporary encrypted cookie containing Supabase session data
+// This is only intended to exist for the mfa challenge flow
 export async function setTempCookie(session: Session, res: NextApiResponse) {
   const token = await Iron.seal(session, TEMP_TOKEN_SECRET, Iron.defaults);
 
   const cookie = serialize(TEMP_COOKIE, token, {
     maxAge: session.expires_in,
-    expires: session.expires_at ? new Date(session.expires_at) : undefined,
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     path: "/",
@@ -44,7 +44,7 @@ export async function getSessionFromTempCookie(
 
 // Sets the Supabase auth cookies for a given user session
 export function setAuthCookie(session: Session, res: NextApiResponse) {
-  const { access_token, refresh_token, expires_at, expires_in } = session;
+  const { access_token, refresh_token, expires_in } = session;
 
   const authCookies = [
     { name: ACCESS_TOKEN_COOKIE, value: access_token },
@@ -56,7 +56,6 @@ export function setAuthCookie(session: Session, res: NextApiResponse) {
     .map(({ name, value }) =>
       serialize(name, value, {
         maxAge: expires_in,
-        expires: expires_at ? new Date(expires_at) : undefined,
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         path: "/",
@@ -64,6 +63,7 @@ export function setAuthCookie(session: Session, res: NextApiResponse) {
       })
     );
 
+  // Also clear the temp cookie
   const updatedCookies = [
     ...authCookies,
     serialize(TEMP_COOKIE, "", { maxAge: -1, path: "/" }),

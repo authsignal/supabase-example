@@ -14,7 +14,7 @@ export default async function signUp(
   );
 
   if (error || !isSession(data)) {
-    return { error };
+    return res.send({ error });
   }
 
   setAuthCookie(data, res);
@@ -22,6 +22,4 @@ export default async function signUp(
   res.redirect("/");
 }
 
-const isSession = (data: any): data is Session => {
-  return !!data?.access_token;
-};
+const isSession = (data: any): data is Session => !!data?.access_token;

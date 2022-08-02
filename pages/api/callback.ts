@@ -16,10 +16,8 @@ export default async function callback(
 
     if (session) {
       setAuthCookie(session, res);
-
-      return res.redirect("/");
     }
   }
 
-  res.redirect("/sign-in");
+  res.redirect("/");
 }
