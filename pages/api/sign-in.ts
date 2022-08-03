@@ -18,7 +18,7 @@ export default async function signIn(
   }
 
   const { state, challengeUrl } = await authsignal.track({
-    action: "login",
+    action: "signIn",
     userId: data.user.id,
     redirectUrl,
   });

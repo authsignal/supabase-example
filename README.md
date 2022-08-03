@@ -1,34 +1,65 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Authsignal Supabase MFA Example
 
-## Getting Started
+This example shows how to integrate Authsignal with Next.js and Supabase in order to add an MFA step after login.
 
-First, run the development server:
+The user flow in the example is as follows:
 
-```bash
+1. The user enters their email and password to sign in
+2. If the user has set up MFA, they're prompted to complete an MFA challenge (e.g. via Authenticator App) in order to complete sign in
+3. If the user has not set up MFA, they're signed in immediately and will see a button to set up MFA
+
+The approach uses a temporary encrypted cookie to ensure that the Supabase auth cookies (access_token and refresh_token) are only set if the MFA challenge was successful. Session data is encrypted using [@hapi/iron](https://hapi.dev/family/iron).
+
+A live version of this example can be found [here](https://authsignal-supabase-example.vercel.app).
+
+## Step 1: Configuring an Authsignal tenant
+
+Log in to the [Authsignal Portal](https://portal.authsignal.com) and create a new project and tenant.
+
+You will also need to [enable at least one authenticator for your tenant](https://portal.authsignal.com/organisations/tenants/authenticators) - for example Authenticator Apps.
+
+Finally, to configure the sign-in action to always challenge, go [here](https://portal.authsignal.com/actions/signIn/rules) and set the default action outcome to `CHALLENGE` and click save.
+
+## Step 2: Creating a Supabase project
+
+From your [Supabase dashboard](https://app.supabase.com/), click `New project`.
+
+Enter a `Name` for your Supabase project and enter or generate a secure `Database Password`, then click `Create new project`.
+
+Once your project is created go to `Authentication -> Settings -> Auth Providers` and ensure `Enable Email provider` is checked and that `Confirm Email` is unchecked.
+
+## Step 3: Configure project env vars
+
+Copy the .env.local.example file to .env.local:
+
+```
+cp .env.local.example .env.local
+```
+
+Set `AUTHSIGNAL_SECRET` to your [Authsignal secret key](https://portal.authsignal.com/organisations/tenants/api).
+
+The `TEMP_TOKEN_SECRET` is used to encrypt the temporary cookie. Set it to a random string of 32 characters.
+
+The Supabase values can be found under `Settings > API` for your project.
+
+## Step 4: Running the project
+
+Install project dependencies:
+
+```
+npm install
+# or
+yarn install
+```
+
+Running the app:
+
+```
 npm run dev
 # or
 yarn dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Notes
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
-
-[API routes](https://nextjs.org/docs/api-routes/introduction) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
-
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+To learn more about Authsignal take a look at the [API Documentation](https://docs.authsignal.com/).
