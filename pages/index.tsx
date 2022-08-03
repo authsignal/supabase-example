@@ -37,18 +37,13 @@ export default function HomePage({ user, isEnrolled, mfaUrl }: Props) {
         <Typography.Text className="mt-2">
           Logged in as: {user?.email}
         </Typography.Text>
-        <Typography.Text className="mt-2">
-          Enrollment status: {isEnrolled ? "Enrolled" : "Not enrolled"}
-        </Typography.Text>
-        {!isEnrolled && (
-          <Button
-            block
-            className="mt-3"
-            onClick={() => (window.location.href = mfaUrl)}
-          >
-            Set up MFA
-          </Button>
-        )}
+        <Button
+          block
+          className="mt-3"
+          onClick={() => (window.location.href = mfaUrl)}
+        >
+          {isEnrolled ? "Manage MFA settings" : "Set up MFA"}
+        </Button>
         <Button
           block
           className="mt-3"

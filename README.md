@@ -19,6 +19,75 @@ A live version of this example can be found [here](https://authsignal-supabase-e
 3. The sign-in API route then calls the Authsignal client's `track` method to determine if an MFA challenge is required
 4. If a challenge is required, the API route saves the session object in a temporary encrypted cookie and redirects to Authsignal
 5. Once the challenge is completed, Authsignal redirects back to `/api/callback` which retrieves the session and sets the Supabase auth cookies
+6. The `callback` API route then redirects to the index page which is protected with Supabase's `withPageAuth` wrapper around `getServerSideProps`
+
+### 1-4: The `signIn` API route
+
+```
+export default async function signIn(req: NextApiRequest, res: NextApiResponse) {
+  const { email, password } = req.body;
+
+  const { data: session } = await supabase.auth.api.signInWithEmail(email, password);
+
+  const { state, challengeUrl } = await authsignal.track({
+    action: "signIn",
+    userId: session.user.id,
+    redirectUrl: "http://localhost:3000/api/callback",
+  });
+
+  if (state === "CHALLENGE_REQUIRED") {
+    await setTempCookie(session, res);
+    res.redirect(303, challengeUrl);
+  } else {
+    setAuthCookie(session, res);
+    res.redirect("/");
+  }
+}
+
+```
+
+### 5: The `callback` API route
+
+```
+export default async function callback(req: NextApiRequest, res: NextApiResponse) {
+  const token = req.query.token;
+
+  const { success } = await authsignal.validateChallenge({ token });
+
+  if (success) {
+    const session = await getSessionFromTempCookie(req);
+
+    if (session) {
+      setAuthCookie(session, res);
+    }
+  }
+
+  res.redirect("/");
+}
+```
+
+### 6: Using SSR and `withPageAuth` to get the authenticated user and whether they're enrolled for MFA
+
+```
+import { getUser, withPageAuth } from "@supabase/auth-helpers-nextjs";
+import { authsignal } from "../lib";
+
+export const getServerSideProps = withPageAuth({
+  redirectTo: "/sign-in",
+  async getServerSideProps(ctx) {
+    const { user } = await getUser(ctx);
+
+    const { isEnrolled, url: mfaUrl } = await authsignal.mfa({
+      userId: user.id,
+      redirectUrl,
+    });
+
+    return {
+      props: { user, isEnrolled, mfaUrl },
+    };
+  },
+});
+```
 
 ## Step 1: Configuring an Authsignal tenant
 
@@ -36,7 +105,14 @@ Enter a `Name` for your Supabase project and enter or generate a secure `Databas
 
 Once your project is created go to `Authentication -> Settings -> Auth Providers` and ensure `Enable Email provider` is checked and that `Confirm Email` is unchecked.
 
-## Step 3: Configure project env vars
+## Step 3: Configure the Next.js app
+
+Clone the example repo by running:
+
+```
+git clone https://github.com/authsignal/supabase-example
+cd supabase-example
+```
 
 Copy the .env.local.example file to .env.local:
 
@@ -46,9 +122,9 @@ cp .env.local.example .env.local
 
 Set `AUTHSIGNAL_SECRET` to your [Authsignal secret key](https://portal.authsignal.com/organisations/tenants/api).
 
-The `TEMP_TOKEN_SECRET` is used to encrypt the temporary cookie. Set it to a random string of 32 characters.
+Set the values for `NEXT_PUBLIC_SUPABASE_ANON_KEY` and `NEXT_PUBLIC_SUPABASE_URL`. These can be found in Supabase under `Settings > API` for your project.
 
-The Supabase values can be found under `Settings > API` for your project.
+The `TEMP_TOKEN_SECRET` is used to encrypt the temporary cookie. Set it to a random string of 32 characters.
 
 ## Step 4: Running the project
 
@@ -68,6 +144,6 @@ npm run dev
 yarn dev
 ```
 
-## Notes
+## Resources
 
-To learn more about Authsignal take a look at the [API Documentation](https://docs.authsignal.com/).
+- To learn more about Authsignal take a look at the [API Documentation](https://docs.authsignal.com/).
