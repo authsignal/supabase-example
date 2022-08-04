@@ -66,7 +66,7 @@ export default async function callback(req: NextApiRequest, res: NextApiResponse
 }
 ```
 
-### 6: Using SSR and `withPageAuth` to get the authenticated user and whether they're enrolled for MFA
+### 6: Using SSR and `withPageAuth` to get the authenticated user and determine if they're enrolled for MFA
 
 ```
 import { getUser, withPageAuth } from "@supabase/auth-helpers-nextjs";
@@ -97,6 +97,8 @@ You will also need to [enable at least one authenticator for your tenant](https:
 
 Finally, to configure the sign-in action to always challenge, go [here](https://portal.authsignal.com/actions/signIn/rules) and set the default action outcome to `CHALLENGE` and click save.
 
+![Authsignal settings](/authsignal-settings.png?raw=true)
+
 ## Step 2: Creating a Supabase project
 
 From your [Supabase dashboard](https://app.supabase.com/), click `New project`.
@@ -104,6 +106,8 @@ From your [Supabase dashboard](https://app.supabase.com/), click `New project`.
 Enter a `Name` for your Supabase project and enter or generate a secure `Database Password`, then click `Create new project`.
 
 Once your project is created go to `Authentication -> Settings -> Auth Providers` and ensure `Enable Email provider` is checked and that `Confirm Email` is unchecked.
+
+![Supabase settings](/supabase-settings.png?raw=true)
 
 ## Step 3: Configure the Next.js app
 
