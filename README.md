@@ -109,7 +109,7 @@ Once your project is created go to `Authentication -> Settings -> Auth Providers
 
 ![Supabase settings](/supabase-settings.png?raw=true)
 
-## Step 3: Configure the Next.js app
+## Step 3: Configuring the Next.js app
 
 Clone the example repo by running:
 

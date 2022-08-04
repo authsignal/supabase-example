@@ -35,7 +35,7 @@ export default function HomePage({ user, isEnrolled, mfaUrl }: Props) {
     <Layout>
       <div className="flex flex-col min-w-[300px]">
         <Typography.Text className="mt-2">
-          Logged in as: {user?.email}
+          Signed in as: {user?.email}
         </Typography.Text>
         <Button
           block
