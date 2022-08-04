@@ -15,9 +15,9 @@ A live version of this example can be found [here](https://authsignal-supabase-e
 ## How it works
 
 1. A sign-in form posts email and password to the Next.js API route `/api/sign-in`
-2. The sign-in API route calls the Supabase client's `signInWithEmail` method and gets back a session object
-3. The sign-in API route then calls the Authsignal client's `track` method to determine if an MFA challenge is required
-4. If a challenge is required, the API route saves the session object in a temporary encrypted cookie and redirects to Authsignal
+2. The `signIn` API route calls the Supabase client's `signInWithEmail` method and gets back a session object
+3. The `signIn` API route then calls the Authsignal client's `track` method to determine if an MFA challenge is required
+4. If a challenge is required, the `signIn` API route saves the session object in a temporary encrypted cookie and redirects to Authsignal
 5. Once the challenge is completed, Authsignal redirects back to `/api/callback` which retrieves the session and sets the Supabase auth cookies
 6. The `callback` API route then redirects to the index page which is protected with Supabase's `withPageAuth` wrapper around `getServerSideProps`
 
