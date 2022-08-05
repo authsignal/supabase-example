@@ -216,11 +216,9 @@ We will add some form components for signing in and signing up as well as a basi
 Add the following code to `/pages/sign-up.tsx`:
 
 ```
-import { useRouter } from "next/router";
+import Link from "next/link";
 
 export default function SignUpPage() {
-  const router = useRouter();
-
   return (
     <main>
       <form method="POST" action="/api/sign-up">
@@ -232,7 +230,9 @@ export default function SignUpPage() {
       </form>
       <div>
         {"Already have an account? "}
-        <a onClick={() => router.push("/sign-in")}>Sign in</a>
+        <Link href="sign-in">
+          <a>Sign in</a>
+        </Link>
       </div>
     </main>
   );
@@ -242,11 +242,9 @@ export default function SignUpPage() {
 Then add the following code to `/pages/sign-in.tsx`:
 
 ```
-import { useRouter } from "next/router";
+import Link from "next/link";
 
 export default function SignInPage() {
-  const router = useRouter();
-
   return (
     <main>
       <form method="POST" action="/api/sign-in">
@@ -258,7 +256,9 @@ export default function SignInPage() {
       </form>
       <div>
         {"Don't have an account? "}
-        <a onClick={() => router.push("/sign-up")}>Sign up</a>
+        <Link href="sign-up">
+          <a>Sign up</a>
+        </Link>
       </div>
     </main>
   );
