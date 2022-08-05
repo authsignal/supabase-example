@@ -313,6 +313,58 @@ export default function HomePage({ user, isEnrolled, mfaUrl }: Props) {
 
 ```
 
+Optional: To make things look a bit nicer, you can add the following to `/styles/globals.css`:
+
+```
+main {
+  min-height: 100vh;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+section,
+form {
+  display: flex;
+  flex-direction: column;
+  min-width: 300px;
+}
+
+button {
+  cursor: pointer;
+  font-weight: 500;
+  line-height: 1;
+  border-radius: 6px;
+  border: none;
+  background-color: #24b47e;
+  color: #fff;
+  padding: 0 15px;
+  height: 40px;
+  margin: 10px 0;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+input {
+  outline: none;
+  font-family: inherit;
+  font-weight: 400;
+  background-color: #fff;
+  border-radius: 6px;
+  color: #1d1d1d;
+  border: 1px solid #e8e8e8;
+  padding: 0 15px;
+  margin: 5px 0;
+  height: 40px;
+}
+
+a {
+  color: #24b47e;
+  cursor: pointer;
+}
+```
+
 ## Step 8: Adding the API routes
 
 Now we'll replace the existing api routes in `/pages/api/` with 4 new routes:
