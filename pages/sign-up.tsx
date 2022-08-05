@@ -1,8 +1,7 @@
+import Link from "next/link";
 import { useRouter } from "next/router";
 
 export default function SignUpPage() {
-  const router = useRouter();
-
   return (
     <main>
       <form method="POST" action="/api/sign-up">
@@ -14,7 +13,9 @@ export default function SignUpPage() {
       </form>
       <div>
         {"Already have an account? "}
-        <a onClick={() => router.push("/sign-in")}>Sign in</a>
+        <Link href="sign-in">
+          <a>Sign in</a>
+        </Link>
       </div>
     </main>
   );
