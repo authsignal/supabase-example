@@ -41,6 +41,10 @@ form {
   min-width: 300px;
 }
 
+h1 {
+  text-align: center;
+}
+
 button {
   cursor: pointer;
   font-weight: 500;

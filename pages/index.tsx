@@ -31,6 +31,7 @@ export default function HomePage({ user, isEnrolled, mfaUrl }: Props) {
   return (
     <main>
       <section>
+        <h1>My Example App</h1>
         <div> Signed in as: {user?.email}</div>
         <button onClick={() => (window.location.href = mfaUrl)}>
           {isEnrolled ? "Manage MFA settings" : "Set up MFA"}
