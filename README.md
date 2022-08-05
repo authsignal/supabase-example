@@ -458,7 +458,7 @@ export default async function signOut(
 }
 ```
 
-Finally add a route to handle the redirect back from Authsignal after an MFA challenge:
+Finally we need a route to handle the redirect back from Authsignal after an MFA challenge. Add the following to `/pages/api/callback.ts`:
 
 ```
 import { NextApiRequest, NextApiResponse } from "next";
@@ -491,3 +491,4 @@ Then if you sign out, you'll be prompted to complete an MFA challenge when signi
 ## Resources
 
 - To learn more about Authsignal take a look at the [API Documentation](https://docs.authsignal.com/).
+- You can customize the look and feel of the Authsignal Prebuilt MFA page [here](https://portal.authsignal.com/organisations/tenants/customizations).
