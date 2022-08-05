@@ -265,7 +265,7 @@ export default function SignInPage() {
 }
 ```
 
-Now replace the default home page component code in `/pages/index.tsx` with the following:
+Now we will use Supabase's `withPageAuth` wrapper around `getServerSideProps` to make the home page require authentication via SSR. Replace the existing code in `/pages/index.tsx` with the following:
 
 ```
 import { getUser, User, withPageAuth } from "@supabase/auth-helpers-nextjs";
