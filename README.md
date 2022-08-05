@@ -21,74 +21,6 @@ A live version of this example can be found [here](https://authsignal-supabase-e
 5. Once the challenge is completed, Authsignal redirects back to `/api/callback` which retrieves the session and sets the Supabase auth cookies
 6. The `callback` API route then redirects to the index page which is protected with Supabase's `withPageAuth` wrapper around `getServerSideProps`
 
-### 1-4: The `signIn` API route
-
-```
-export default async function signIn(req: NextApiRequest, res: NextApiResponse) {
-  const { email, password } = req.body;
-
-  const { data: session } = await supabase.auth.api.signInWithEmail(email, password);
-
-  const { state, challengeUrl } = await authsignal.track({
-    action: "signIn",
-    userId: session.user.id,
-    redirectUrl: "http://localhost:3000/api/callback",
-  });
-
-  if (state === "CHALLENGE_REQUIRED") {
-    await setTempCookie(session, res);
-    res.redirect(303, challengeUrl);
-  } else {
-    setAuthCookie(session, res);
-    res.redirect("/");
-  }
-}
-
-```
-
-### 5: The `callback` API route
-
-```
-export default async function callback(req: NextApiRequest, res: NextApiResponse) {
-  const token = req.query.token;
-
-  const { success } = await authsignal.validateChallenge({ token });
-
-  if (success) {
-    const session = await getSessionFromTempCookie(req);
-
-    if (session) {
-      setAuthCookie(session, res);
-    }
-  }
-
-  res.redirect("/");
-}
-```
-
-### 6: Using SSR and `withPageAuth` to get the authenticated user and determine if they're enrolled for MFA
-
-```
-import { getUser, withPageAuth } from "@supabase/auth-helpers-nextjs";
-import { authsignal } from "../lib";
-
-export const getServerSideProps = withPageAuth({
-  redirectTo: "/sign-in",
-  async getServerSideProps(ctx) {
-    const { user } = await getUser(ctx);
-
-    const { isEnrolled, url: mfaUrl } = await authsignal.mfa({
-      userId: user.id,
-      redirectUrl,
-    });
-
-    return {
-      props: { user, isEnrolled, mfaUrl },
-    };
-  },
-});
-```
-
 ## Step 1: Configuring an Authsignal tenant
 
 Log in to the [Authsignal Portal](https://portal.authsignal.com) and create a new project and tenant.
@@ -109,44 +41,405 @@ Once your project is created go to `Authentication -> Settings -> Auth Providers
 
 ![Supabase settings](/supabase-settings.png?raw=true)
 
-## Step 3: Configuring the Next.js app
+## Step 3: Building a Next.js app
 
-Clone the example repo by running:
+Create a new Next.js project:
 
-```
-git clone https://github.com/authsignal/supabase-example
-cd supabase-example
-```
-
-Copy the .env.local.example file to .env.local:
-
-```
-cp .env.local.example .env.local
+```bash
+npx create-next-app --typescript supabase-authsignal-example
+cd supabase-authsignal-example
 ```
 
-Set `AUTHSIGNAL_SECRET` to your [Authsignal secret key](https://portal.authsignal.com/organisations/tenants/api).
-
-Set the values for `NEXT_PUBLIC_SUPABASE_ANON_KEY` and `NEXT_PUBLIC_SUPABASE_URL`. These can be found in Supabase under `Settings > API` for your project.
-
-The `TEMP_TOKEN_SECRET` is used to encrypt the temporary cookie. Set it to a random string of 32 characters.
-
-## Step 4: Running the project
-
-Install project dependencies:
+Create a `.env.local` file and enter the following values:
 
 ```
-npm install
-# or
-yarn install
+NEXT_PUBLIC_SUPABASE_URL=get-from-supabase-dashboard
+NEXT_PUBLIC_SUPABASE_ANON_KEY=get-from-supabase-dashboard
+AUTHSIGNAL_SECRET=get-from-authsignal-dashboard
+TEMP_TOKEN_SECRET=this-is-a-secret-value-with-at-least-32-characters
 ```
 
-Running the app:
+Supabase values can be found under `Settings > API` for your project.
 
-```
+Authsignal values can be found under `Settings > API Keys` for your tenant.
+
+`TEMP_TOKEN_SECRET` is used to encrypt the temporary cookie. Set it to a random 32 character length string.
+
+Restart your Next.js development server to read in the new values from `.env.local`.
+
+```bash
 npm run dev
-# or
-yarn dev
 ```
+
+## Step 4: Installing dependencies
+
+Install the Supabase client and Auth helpers for Next.js:
+
+```
+npm install @supabase/supabase-js @supabase/auth-helpers-nextjs
+```
+
+Install the Authsignal Node.js client:
+
+```
+npm install @authsignal/node
+```
+
+Finally install 2 packages to help encrypt and serialize session data in cookies:
+
+```
+npm install @hapi/iron cookie
+npm install --save-dev @types/cookie
+```
+
+## Step 5: Initializing the Authsignal client
+
+Add the following code to `/lib/authsignal.ts`:
+
+```
+import { Authsignal } from "@authsignal/node";
+
+const secret = process.env.AUTHSIGNAL_SECRET;
+
+if (!secret) {
+  throw new Error("AUTHSIGNAL_SECRET is undefined");
+}
+
+export const authsignal = new Authsignal({ secret });
+```
+
+Then add the following to `/lib/index.ts`:
+
+```
+export * from "./authsignal";
+```
+
+## Step 6: Managing session data in cookies
+
+Next we will add some helper functions for managing cookies:
+
+- `setTempCookie` encrypts and serializes the Supabase session data and sets it in a temporary cookie
+- `getSessionFromTempCookie` decrypts and parses this session data back from the cookie
+- `setAuthCookie` sets the Supabase auth cookies (`access_token` and `refresh_token`) and clears the temporary cookie
+
+Add the following code to `/lib/cookies.ts`:
+
+```
+import Iron from "@hapi/iron";
+import { Session } from "@supabase/supabase-js";
+import { parse, serialize } from "cookie";
+import { NextApiRequest, NextApiResponse } from "next";
+
+export async function setTempCookie(session: Session, res: NextApiResponse) {
+  const token = await Iron.seal(session, TEMP_TOKEN_SECRET, Iron.defaults);
+
+  const cookie = serialize(TEMP_COOKIE, token, {
+    maxAge: session.expires_in,
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    sameSite: "lax",
+  });
+
+  res.setHeader("Set-Cookie", cookie);
+}
+
+export async function getSessionFromTempCookie(
+  req: NextApiRequest
+): Promise<Session | undefined> {
+  const cookie = req.headers.cookie as string;
+
+  const cookies = parse(cookie ?? "");
+
+  const tempCookie = cookies[TEMP_COOKIE];
+
+  if (!tempCookie) {
+    return undefined;
+  }
+
+  const session = await Iron.unseal(
+    tempCookie,
+    TEMP_TOKEN_SECRET,
+    Iron.defaults
+  );
+
+  return session;
+}
+
+export function setAuthCookie(session: Session, res: NextApiResponse) {
+  const { access_token, refresh_token, expires_in } = session;
+
+  const authCookies = [
+    { name: ACCESS_TOKEN_COOKIE, value: access_token },
+    refresh_token
+      ? { name: REFRESH_TOKEN_COOKIE, value: refresh_token }
+      : undefined,
+  ]
+    .filter(isDefined)
+    .map(({ name, value }) =>
+      serialize(name, value, {
+        maxAge: expires_in,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+        sameSite: "lax",
+      })
+    );
+
+  // Also clear the temp cookie
+  const updatedCookies = [
+    ...authCookies,
+    serialize(TEMP_COOKIE, "", { maxAge: -1, path: "/" }),
+  ];
+
+  res.setHeader("Set-Cookie", updatedCookies);
+}
+
+const isDefined = <T>(value: T | undefined): value is T => !!value;
+
+const TEMP_TOKEN_SECRET = process.env.TEMP_TOKEN_SECRET!;
+const TEMP_COOKIE = "as-mfa-cookie";
+const ACCESS_TOKEN_COOKIE = "sb-access-token";
+const REFRESH_TOKEN_COOKIE = "sb-refresh-token";
+```
+
+Then add the following to `/lib/index.ts`:
+
+```
+export * from "./cookies";
+```
+
+## Step 7: Building the UI
+
+We will add some form components for signing in and signing up as well as a basic home page.
+
+Add the following code to `/pages/sign-up.tsx`:
+
+```
+import { useRouter } from "next/router";
+
+export default function SignUpPage() {
+  const router = useRouter();
+
+  return (
+    <main>
+      <form method="POST" action="/api/sign-up">
+        <label htmlFor="email">Email</label>
+        <input id="email" type="email" name="email" required />
+        <label htmlFor="password">Password</label>
+        <input id="password" type="password" name="password" required />
+        <button type="submit">Sign up</button>
+      </form>
+      <div>
+        {"Already have an account? "}
+        <a onClick={() => router.push("/sign-in")}>Sign in</a>
+      </div>
+    </main>
+  );
+}
+```
+
+Then add the following code to `/pages/sign-in.tsx`:
+
+```
+import { useRouter } from "next/router";
+
+export default function SignInPage() {
+  const router = useRouter();
+
+  return (
+    <main>
+      <form method="POST" action="/api/sign-in">
+        <label htmlFor="email">Email</label>
+        <input id="email" type="email" name="email" required />
+        <label htmlFor="password">Password</label>
+        <input id="password" type="password" name="password" required />
+        <button type="submit">Sign in</button>
+      </form>
+      <div>
+        {"Don't have an account? "}
+        <a onClick={() => router.push("/sign-up")}>Sign up</a>
+      </div>
+    </main>
+  );
+}
+```
+
+Now replace the default home page component code in `/pages/index.tsx` with the following:
+
+```
+import { getUser, User, withPageAuth } from "@supabase/auth-helpers-nextjs";
+import { GetServerSideProps } from "next";
+import { useRouter } from "next/router";
+import { authsignal } from "../lib/authsignal";
+
+interface Props {
+  user: User;
+  isEnrolled: boolean;
+  mfaUrl: string;
+}
+
+export const getServerSideProps: GetServerSideProps<Props> = withPageAuth({
+  redirectTo: "/sign-in",
+  async getServerSideProps(ctx) {
+    const { user } = await getUser(ctx);
+
+    const { isEnrolled, url: mfaUrl } = await authsignal.mfa({
+      userId: user.id,
+      redirectUrl: "http://localhost:3000/api/callback",
+    });
+
+    return {
+      props: { user, isEnrolled, mfaUrl },
+    };
+  },
+});
+
+export default function HomePage({ user, isEnrolled, mfaUrl }: Props) {
+  const router = useRouter();
+
+  return (
+    <main>
+      <section>
+        <div> Signed in as: {user?.email}</div>
+        <button onClick={() => (window.location.href = mfaUrl)}>
+          {isEnrolled ? "Manage MFA settings" : "Set up MFA"}
+        </button>
+        <button onClick={() => router.push("/api/sign-out")}>Sign out</button>
+      </section>
+    </main>
+  );
+}
+
+```
+
+## Step 8: Adding the API routes
+
+Now we'll replace the existing api routes in `/pages/api/` with 4 new routes:
+
+- `/sign-in.ts`: handles signing in with Supabase and initiating the MFA challenge with Authsignal
+- `/sign-up.ts`: handles signing up with Supabase
+- `/sign-out.ts`: clears the Supabase auth cookies and signs the user out
+- `/callback.ts`: handles completing the MFA challenge with Authsignal
+
+Add the following code to `/pages/api/sign-in.ts`:
+
+```
+import { supabaseClient } from "@supabase/auth-helpers-nextjs";
+import { NextApiRequest, NextApiResponse } from "next";
+import { authsignal, setAuthCookie, setTempCookie } from "../../lib";
+
+export default async function signIn(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  const { email, password } = req.body;
+
+  const { data, error } = await supabaseClient.auth.api.signInWithEmail(
+    email,
+    password
+  );
+
+  if (error || !data?.user) {
+    return res.send({ error });
+  }
+
+  const { state, challengeUrl } = await authsignal.track({
+    action: "signIn",
+    userId: data.user.id,
+    redirectUrl: "http://localhost:3000/api/callback",
+  });
+
+  // If an MFA challenge is required, set temp cookie and redirect to Authsignal
+  // Otherwise set Supabase auth cookies immediately and redirect to home
+  if (state === "CHALLENGE_REQUIRED" && challengeUrl) {
+    await setTempCookie(data, res);
+    res.redirect(303, challengeUrl);
+  } else {
+    setAuthCookie(data, res);
+    res.redirect("/");
+  }
+}
+
+```
+
+Then to handle new sign-ups add the following to `/pages/api/sign-up.ts`:
+
+```
+import { supabaseClient } from "@supabase/auth-helpers-nextjs";
+import { Session } from "@supabase/supabase-js";
+import { NextApiRequest, NextApiResponse } from "next";
+import { setAuthCookie } from "../../lib";
+
+export default async function signUp(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  const { email, password } = req.body;
+
+  const { data, error } = await supabaseClient.auth.api.signUpWithEmail(
+    email,
+    password
+  );
+
+  if (error || !isSession(data)) {
+    return res.send({ error });
+  }
+
+  setAuthCookie(data, res);
+
+  res.redirect("/");
+}
+
+const isSession = (data: any): data is Session => !!data?.access_token;
+
+```
+
+To clear the auth cookies on sign-out add the following to `/pages/api/sign-out.ts`:
+
+```
+import { NextApiRequest, NextApiResponse } from "next";
+import { supabase } from "../../lib";
+
+export default async function signOut(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  supabase.auth.api.deleteAuthCookie(req, res, { redirectTo: "/sign-in" });
+}
+
+```
+
+Finally add a route to handle the redirect back from Authsignal after an MFA challenge:
+
+```
+import { NextApiRequest, NextApiResponse } from "next";
+import { authsignal, getSessionFromTempCookie, setAuthCookie } from "../../lib";
+
+export default async function callback(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  const token = req.query.token as string;
+
+  const { success } = await authsignal.validateChallenge({ token });
+
+  if (success) {
+    const session = await getSessionFromTempCookie(req);
+
+    if (session) {
+      setAuthCookie(session, res);
+    }
+  }
+
+  res.redirect("/");
+}
+
+```
+
+That's it! You should now be able to sign up a new user and set up MFA.
+
+Then if you sign out, you'll be prompted to complete an MFA challenge when signing back in again.
 
 ## Resources
 

@@ -1,6 +1,6 @@
-import { UserActionState } from "@authsignal/node";
+import { supabaseClient } from "@supabase/auth-helpers-nextjs";
 import { NextApiRequest, NextApiResponse } from "next";
-import { authsignal, setAuthCookie, setTempCookie, supabase } from "../../lib";
+import { authsignal, setAuthCookie, setTempCookie } from "../../lib";
 
 export default async function signIn(
   req: NextApiRequest,
@@ -8,7 +8,7 @@ export default async function signIn(
 ) {
   const { email, password } = req.body;
 
-  const { data, error } = await supabase.auth.api.signInWithEmail(
+  const { data, error } = await supabaseClient.auth.api.signInWithEmail(
     email,
     password
   );
@@ -23,10 +23,7 @@ export default async function signIn(
     redirectUrl,
   });
 
-  // If mfa challenge is required, set temporary encrypted cookie with session data
-  // And then redirect to the Authsignal Prebuilt MFA page to initiate the challenge
-  // Otherwise if no challenge is required, set auth cookie immediately and redirect to home
-  if (state === UserActionState.CHALLENGE_REQUIRED && challengeUrl) {
+  if (state === "CHALLENGE_REQUIRED" && challengeUrl) {
     await setTempCookie(data, res);
     res.redirect(303, challengeUrl);
   } else {

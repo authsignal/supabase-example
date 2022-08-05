@@ -1,10 +1,7 @@
-import { User } from "@supabase/supabase-js";
-import { getUser, withPageAuth } from "@supabase/auth-helpers-nextjs";
-import { Layout } from "../components";
+import { getUser, User, withPageAuth } from "@supabase/auth-helpers-nextjs";
 import { GetServerSideProps } from "next";
-import { authsignal } from "../lib";
-import { Button, Typography } from "@supabase/ui";
 import { useRouter } from "next/router";
+import { authsignal } from "../lib/authsignal";
 
 interface Props {
   user: User;
@@ -32,27 +29,15 @@ export default function HomePage({ user, isEnrolled, mfaUrl }: Props) {
   const router = useRouter();
 
   return (
-    <Layout>
-      <div className="flex flex-col min-w-[300px]">
-        <Typography.Text className="mt-2">
-          Signed in as: {user?.email}
-        </Typography.Text>
-        <Button
-          block
-          className="mt-3"
-          onClick={() => (window.location.href = mfaUrl)}
-        >
+    <main>
+      <section>
+        <div> Signed in as: {user?.email}</div>
+        <button onClick={() => (window.location.href = mfaUrl)}>
           {isEnrolled ? "Manage MFA settings" : "Set up MFA"}
-        </Button>
-        <Button
-          block
-          className="mt-3"
-          onClick={() => router.push("/api/sign-out")}
-        >
-          Sign out
-        </Button>
-      </div>
-    </Layout>
+        </button>
+        <button onClick={() => router.push("/api/sign-out")}>Sign out</button>
+      </section>
+    </main>
   );
 }
 

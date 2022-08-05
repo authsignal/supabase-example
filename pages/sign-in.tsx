@@ -1,31 +1,21 @@
-import { Button, Input, Typography } from "@supabase/ui";
 import { useRouter } from "next/router";
-import { Layout } from "../components";
 
 export default function SignInPage() {
   const router = useRouter();
 
   return (
-    <Layout>
-      <form
-        method="POST"
-        action="/api/sign-in"
-        className="flex flex-col min-w-[300px]"
-      >
-        <Typography.Text className="mt-2">Email</Typography.Text>
-        <Input id="email" type="email" name="email" required />
-        <Typography.Text className="mt-2">Password</Typography.Text>
-        <Input id="password" type="password" name="password" required />
-        <Button block className="my-3">
-          Sign in
-        </Button>
+    <main>
+      <form method="POST" action="/api/sign-in">
+        <label htmlFor="email">Email</label>
+        <input id="email" type="email" name="email" required />
+        <label htmlFor="password">Password</label>
+        <input id="password" type="password" name="password" required />
+        <button type="submit">Sign in</button>
       </form>
-      <Typography.Text>
+      <div>
         {"Don't have an account? "}
-        <Typography.Link onClick={() => router.push("/sign-up")}>
-          Sign up
-        </Typography.Link>
-      </Typography.Text>
-    </Layout>
+        <a onClick={() => router.push("/sign-up")}>Sign up</a>
+      </div>
+    </main>
   );
 }

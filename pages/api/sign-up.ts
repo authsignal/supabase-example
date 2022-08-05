@@ -1,6 +1,7 @@
+import { supabaseClient } from "@supabase/auth-helpers-nextjs";
 import { Session } from "@supabase/supabase-js";
 import { NextApiRequest, NextApiResponse } from "next";
-import { setAuthCookie, supabase } from "../../lib";
+import { setAuthCookie } from "../../lib";
 
 export default async function signUp(
   req: NextApiRequest,
@@ -8,7 +9,7 @@ export default async function signUp(
 ) {
   const { email, password } = req.body;
 
-  const { data, error } = await supabase.auth.api.signUpWithEmail(
+  const { data, error } = await supabaseClient.auth.api.signUpWithEmail(
     email,
     password
   );

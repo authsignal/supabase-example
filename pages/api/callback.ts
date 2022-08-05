@@ -1,8 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { authsignal, getSessionFromTempCookie, setAuthCookie } from "../../lib";
 
-// Handles the redirect back from the Authsignal Prebuilt MFA page
-// Clears the temp encrypted cookie used during MFA flow and sets the Supabase auth cookie
 export default async function callback(
   req: NextApiRequest,
   res: NextApiResponse
