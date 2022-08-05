@@ -310,7 +310,6 @@ export default function HomePage({ user, isEnrolled, mfaUrl }: Props) {
     </main>
   );
 }
-
 ```
 
 Optional: To make things look a bit nicer, you can add the following to `/styles/globals.css`:
@@ -412,7 +411,6 @@ export default async function signIn(
     res.redirect("/");
   }
 }
-
 ```
 
 Then to handle new sign-ups add the following to `/pages/api/sign-up.ts`:
@@ -444,7 +442,6 @@ export default async function signUp(
 }
 
 const isSession = (data: any): data is Session => !!data?.access_token;
-
 ```
 
 To clear the auth cookies on sign-out add the following to `/pages/api/sign-out.ts`:
@@ -459,7 +456,6 @@ export default async function signOut(
 ) {
   supabase.auth.api.deleteAuthCookie(req, res, { redirectTo: "/sign-in" });
 }
-
 ```
 
 Finally add a route to handle the redirect back from Authsignal after an MFA challenge:
@@ -486,7 +482,6 @@ export default async function callback(
 
   res.redirect("/");
 }
-
 ```
 
 That's it! You should now be able to sign up a new user and set up MFA.
