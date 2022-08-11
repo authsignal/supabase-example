@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { authsignal, getSessionFromTempCookie, setAuthCookie } from "../../lib";
+import { authsignal } from "../../lib/authsignal";
+import { getSessionFromTempCookie, setAuthCookie } from "../../lib/cookies";
 
 export default async function callback(
   req: NextApiRequest,

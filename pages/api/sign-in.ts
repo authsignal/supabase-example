@@ -1,6 +1,7 @@
 import { supabaseClient } from "@supabase/auth-helpers-nextjs";
 import { NextApiRequest, NextApiResponse } from "next";
-import { authsignal, setAuthCookie, setTempCookie } from "../../lib";
+import { authsignal } from "../../lib/authsignal";
+import { setAuthCookie, setTempCookie } from "../../lib/cookies";
 
 export default async function signIn(
   req: NextApiRequest,
