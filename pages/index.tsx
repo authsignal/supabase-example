@@ -6,7 +6,6 @@ import { authsignal } from "../lib/authsignal";
 interface Props {
   user: User;
   isEnrolled: boolean;
-  mfaUrl: string;
 }
 
 export const getServerSideProps: GetServerSideProps<Props> = withPageAuth({
@@ -14,26 +13,36 @@ export const getServerSideProps: GetServerSideProps<Props> = withPageAuth({
   async getServerSideProps(ctx) {
     const { user } = await getUser(ctx);
 
-    const { isEnrolled, url: mfaUrl } = await authsignal.mfa({
-      userId: user.id,
-      redirectUrl,
-    });
+    const { isEnrolled } = await authsignal.getUser({ userId: user.id });
 
     return {
-      props: { user, isEnrolled, mfaUrl },
+      props: { user, isEnrolled },
     };
   },
 });
 
-export default function HomePage({ user, isEnrolled, mfaUrl }: Props) {
+export default function HomePage({ user, isEnrolled }: Props) {
   const router = useRouter();
 
   return (
     <main>
       <section>
         <h1>My Example App</h1>
-        <div> Signed in as: {user?.email}</div>
-        <button onClick={() => (window.location.href = mfaUrl)}>
+        <div>Signed in as: {user?.email}</div>
+        <div>User ID: {user?.id}</div>
+        <button
+          onClick={async (e) => {
+            e.preventDefault();
+
+            const { mfaUrl } = await fetch("/api/mfa", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ isEnrolled }),
+            }).then((res) => res.json());
+
+            window.location.href = mfaUrl;
+          }}
+        >
           {isEnrolled ? "Manage MFA settings" : "Set up MFA"}
         </button>
         <button onClick={() => router.push("/api/sign-out")}>Sign out</button>
@@ -41,7 +50,3 @@ export default function HomePage({ user, isEnrolled, mfaUrl }: Props) {
     </main>
   );
 }
-
-const redirectUrl = process.env.SITE_URL
-  ? `${process.env.SITE_URL}/api/callback`
-  : "http://localhost:3000/api/callback";

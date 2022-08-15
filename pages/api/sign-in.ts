@@ -7,6 +7,10 @@ export default async function signIn(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  if (req.method !== "POST") {
+    return res.status(405).send({ message: "Only POST requests allowed" });
+  }
+
   const { email, password } = req.body;
 
   const { data, error } = await supabaseClient.auth.api.signInWithEmail(
@@ -18,21 +22,16 @@ export default async function signIn(
     return res.send({ error });
   }
 
-  const { state, challengeUrl } = await authsignal.track({
+  const { state, url: mfaUrl } = await authsignal.track({
     action: "signIn",
     userId: data.user.id,
-    redirectUrl,
   });
 
-  if (state === "CHALLENGE_REQUIRED" && challengeUrl) {
+  if (state === "CHALLENGE_REQUIRED") {
     await setTempCookie(data, res);
-    res.redirect(303, challengeUrl);
   } else {
     setAuthCookie(data, res);
-    res.redirect("/");
   }
-}
 
-const redirectUrl = process.env.SITE_URL
-  ? `${process.env.SITE_URL}/api/callback`
-  : "http://localhost:3000/api/callback";
+  res.send({ state, mfaUrl });
+}

@@ -15,12 +15,11 @@ export default async function signUp(
   );
 
   if (error || !isSession(data)) {
-    return res.send({ error });
+    res.send({ error });
+  } else {
+    setAuthCookie(data, res);
+    res.send({ data });
   }
-
-  setAuthCookie(data, res);
-
-  res.redirect("/");
 }
 
 const isSession = (data: any): data is Session => !!data?.access_token;
