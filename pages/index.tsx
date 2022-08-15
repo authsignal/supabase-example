@@ -29,7 +29,6 @@ export default function HomePage({ user, isEnrolled }: Props) {
       <section>
         <h1>My Example App</h1>
         <div>Signed in as: {user?.email}</div>
-        <div>User ID: {user?.id}</div>
         <button
           onClick={async (e) => {
             e.preventDefault();
