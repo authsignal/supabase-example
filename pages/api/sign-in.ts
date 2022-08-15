@@ -11,7 +11,7 @@ export default async function signIn(
     return res.status(405).send({ message: "Only POST requests allowed" });
   }
 
-  const { email, password, deviceId } = req.body;
+  const { email, password } = req.body;
 
   const { data, error } = await supabaseClient.auth.api.signInWithEmail(
     email,
@@ -25,7 +25,6 @@ export default async function signIn(
   const { state, url: mfaUrl } = await authsignal.track({
     action: "signIn",
     userId: data.user.id,
-    deviceId,
   });
 
   if (state === "CHALLENGE_REQUIRED") {
