@@ -6,4 +6,8 @@ if (!secret) {
   throw new Error("AUTHSIGNAL_SECRET is undefined");
 }
 
-export const authsignal = new Authsignal({ secret });
+const redirectUrl = process.env.SITE_URL
+  ? `${process.env.SITE_URL}/api/callback`
+  : "http://localhost:3001/api/callback";
+
+export const authsignal = new Authsignal({ secret, redirectUrl });

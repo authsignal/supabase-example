@@ -1,9 +1,36 @@
 import Link from "next/link";
+import { useRouter } from "next/router";
 
 export default function SignInPage() {
+  const router = useRouter();
+
   return (
     <main>
-      <form method="POST" action="/api/sign-in">
+      <form
+        onSubmit={async (e) => {
+          e.preventDefault();
+
+          const target = e.target as typeof e.target & {
+            email: { value: string };
+            password: { value: string };
+          };
+
+          const email = target.email.value;
+          const password = target.password.value;
+
+          const { state, mfaUrl } = await fetch("/api/sign-in", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password }),
+          }).then((res) => res.json());
+
+          if (state === "CHALLENGE_REQUIRED") {
+            window.location.href = mfaUrl;
+          } else {
+            router.push("/");
+          }
+        }}
+      >
         <label htmlFor="email">Email</label>
         <input id="email" type="email" name="email" required />
         <label htmlFor="password">Password</label>
