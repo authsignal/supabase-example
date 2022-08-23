@@ -1,8 +1,11 @@
+import { useAuthsignal } from "@authsignal/nextjs-helpers";
 import Link from "next/link";
 import { useRouter } from "next/router";
 
 export default function SignInPage() {
   const router = useRouter();
+
+  const { anonymousId } = useAuthsignal();
 
   return (
     <main>
@@ -21,7 +24,7 @@ export default function SignInPage() {
           const { state, mfaUrl } = await fetch("/api/sign-in", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password }),
+            body: JSON.stringify({ email, password, deviceId: anonymousId }),
           }).then((res) => res.json());
 
           if (state === "CHALLENGE_REQUIRED") {

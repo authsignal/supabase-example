@@ -1,3 +1,4 @@
+import { useAuthsignal } from "@authsignal/nextjs-helpers";
 import { getUser, User, withPageAuth } from "@supabase/auth-helpers-nextjs";
 import { GetServerSideProps } from "next";
 import { useRouter } from "next/router";
@@ -24,6 +25,8 @@ export const getServerSideProps: GetServerSideProps<Props> = withPageAuth({
 export default function HomePage({ user, isEnrolled }: Props) {
   const router = useRouter();
 
+  const { anonymousId } = useAuthsignal();
+
   return (
     <main>
       <section>
@@ -36,7 +39,7 @@ export default function HomePage({ user, isEnrolled }: Props) {
             const { mfaUrl } = await fetch("/api/mfa", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ isEnrolled }),
+              body: JSON.stringify({ isEnrolled, deviceId: anonymousId }),
             }).then((res) => res.json());
 
             window.location.href = mfaUrl;
