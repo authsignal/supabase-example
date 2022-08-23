@@ -12,13 +12,13 @@ export default withApiAuth(async function mfa(
 
   const { user } = await getUser({ req, res });
 
-  const { isEnrolled, deviceId } = req.body;
+  const { isEnrolled } = req.body;
 
   const { url: mfaUrl } = await authsignal.track({
     action: isEnrolled ? "manageSettings" : "enroll",
     userId: user.id,
     redirectToSettings: isEnrolled,
-    deviceId,
+    deviceId: req.body.deviceId,
   });
 
   res.send({ mfaUrl });
