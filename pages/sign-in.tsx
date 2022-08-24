@@ -5,7 +5,7 @@ import { useRouter } from "next/router";
 export default function SignInPage() {
   const router = useRouter();
 
-  const { anonymousId } = useAuthsignal();
+  const { anonymousId: deviceId } = useAuthsignal();
 
   return (
     <main>
@@ -24,7 +24,7 @@ export default function SignInPage() {
           const { state, mfaUrl } = await fetch("/api/sign-in", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password, deviceId: anonymousId }),
+            body: JSON.stringify({ email, password, deviceId }),
           }).then((res) => res.json());
 
           if (state === "CHALLENGE_REQUIRED") {

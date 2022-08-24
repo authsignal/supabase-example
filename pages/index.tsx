@@ -25,7 +25,7 @@ export const getServerSideProps: GetServerSideProps<Props> = withPageAuth({
 export default function HomePage({ user, isEnrolled }: Props) {
   const router = useRouter();
 
-  const { anonymousId } = useAuthsignal();
+  const { anonymousId: deviceId } = useAuthsignal();
 
   return (
     <main>
@@ -39,7 +39,7 @@ export default function HomePage({ user, isEnrolled }: Props) {
             const { mfaUrl } = await fetch("/api/mfa", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ isEnrolled, deviceId: anonymousId }),
+              body: JSON.stringify({ isEnrolled, deviceId }),
             }).then((res) => res.json());
 
             window.location.href = mfaUrl;
