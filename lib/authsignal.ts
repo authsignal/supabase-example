@@ -10,6 +10,4 @@ const redirectUrl = process.env.SITE_URL
   ? `${process.env.SITE_URL}/api/callback`
   : "http://localhost:3000/api/callback";
 
-const apiBaseUrl = "https://dev-signal.authsignal.com/v1";
-
-export const authsignal = new Authsignal({ apiBaseUrl, secret, redirectUrl });
+export const authsignal = new Authsignal({ secret, redirectUrl });
